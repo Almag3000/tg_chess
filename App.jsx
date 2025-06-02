@@ -1,10 +1,9 @@
+
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/router'
-import { supabase } from '@/lib/supabase'
+import { supabase } from './lib/supabase'
 
 export default function App() {
   const [searching, setSearching] = useState(false)
-  const router = useRouter()
 
   async function handleFindMatch() {
     setSearching(true)
@@ -17,13 +16,9 @@ export default function App() {
       return
     }
 
-    // Удаляем старую запись
     await supabase.from('queue').delete().eq('telegram_id', telegramId)
-
-    // Добавляем в очередь
     await supabase.from('queue').insert({ telegram_id: telegramId })
 
-    // Периодически проверяем игру
     const interval = setInterval(async () => {
       const { data: game } = await supabase
         .from('games')
@@ -35,7 +30,7 @@ export default function App() {
       if (game && game.length > 0) {
         clearInterval(interval)
         const gameId = game[0].id
-        router.push(`/game/${gameId}`)
+        window.location.href = `/game/${gameId}`
       }
     }, 2000)
   }
@@ -50,14 +45,9 @@ export default function App() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-white text-gray-900 p-6">
       <h1 className="text-2xl font-bold">♟️ Онлайн шахматы</h1>
-
-      <button
-        onClick={handleFindMatch}
-        className="bg-blue-500 text-white px-4 py-2 rounded-xl w-full max-w-xs"
-      >
-        🔍 {searching ? 'Ожидание...' : 'Поиск соперника'}
+      <button onClick={handleFindMatch} className="bg-blue-500 text-white px-4 py-2 rounded-xl w-full max-w-xs">
+        🔍 Поиск соперника
       </button>
-
       <button className="bg-green-500 text-white px-4 py-2 rounded-xl w-full max-w-xs">
         👥 Друзья
       </button>
