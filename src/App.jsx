@@ -1,6 +1,45 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '@/lib/supabase'
 
 export default function App() {
+  const [searching, setSearching] = useState(false)
+  const router = useRouter()
+
+  async function handleFindMatch() {
+    setSearching(true)
+
+    const tg = window.Telegram.WebApp
+    const telegramId = tg?.initDataUnsafe?.user?.id?.toString()
+
+    if (!telegramId) {
+      alert('Не удалось получить Telegram ID')
+      return
+    }
+
+    // Удаляем старую запись
+    await supabase.from('queue').delete().eq('telegram_id', telegramId)
+
+    // Добавляем в очередь
+    await supabase.from('queue').insert({ telegram_id: telegramId })
+
+    // Периодически проверяем игру
+    const interval = setInterval(async () => {
+      const { data: game } = await supabase
+        .from('games')
+        .select('*')
+        .or(`white_id.eq.${telegramId},black_id.eq.${telegramId}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (game && game.length > 0) {
+        clearInterval(interval)
+        const gameId = game[0].id
+        router.push(`/game/${gameId}`)
+      }
+    }, 2000)
+  }
+
   useEffect(() => {
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready()
@@ -11,8 +50,17 @@ export default function App() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-white text-gray-900 p-6">
       <h1 className="text-2xl font-bold">♟️ Онлайн шахматы</h1>
-      <button className="bg-blue-500 text-white px-4 py-2 rounded-xl w-full max-w-xs">🔍 Поиск соперника</button>
-      <button className="bg-green-500 text-white px-4 py-2 rounded-xl w-full max-w-xs">👥 Друзья</button>
+
+      <button
+        onClick={handleFindMatch}
+        className="bg-blue-500 text-white px-4 py-2 rounded-xl w-full max-w-xs"
+      >
+        🔍 {searching ? 'Ожидание...' : 'Поиск соперника'}
+      </button>
+
+      <button className="bg-green-500 text-white px-4 py-2 rounded-xl w-full max-w-xs">
+        👥 Друзья
+      </button>
     </div>
   )
 }
