@@ -176,32 +176,44 @@ export default function Home() {
     setSquareStyles(highlight);
   };
 
+  useEffect(() => {
+    if (!status) return;
+    const t = setTimeout(() => setStatus(""), 1000);
+    return () => clearTimeout(t);
+  }, [status]);
+
+  const boardWidth = 320;
+
   return (
     <main className="p-4">
       <h2 className="text-xl mb-2">Реши шахматную задачу</h2>
-      <Chessboard
-        position={fen}
-        width={350}
-        onSquareClick={onSquareClick}
-        squareStyles={squareStyles}
-        orientation={orientation}
-        boardStyle={{ border: "2px solid #444" }}
-        lightSquareStyle={{ backgroundColor: "#f0d9b5" }}
-        darkSquareStyle={{ backgroundColor: "#b58863" }}
-        draggable={false}
-      />
-      <div className="mt-2">
-        <button className="mr-2 px-2 py-1 bg-gray-200" onClick={showHint}>
+      <div style={{ position: "relative", width: boardWidth, margin: "0 auto" }}>
+        <Chessboard
+          position={fen}
+          width={boardWidth}
+          onSquareClick={onSquareClick}
+          squareStyles={squareStyles}
+          orientation={orientation}
+          boardStyle={{ border: "2px solid #444" }}
+          lightSquareStyle={{ backgroundColor: "#f0d9b5" }}
+          darkSquareStyle={{ backgroundColor: "#b58863" }}
+          draggable={false}
+        />
+        {status && (
+          <div className={`status-overlay show`}>{status}</div>
+        )}
+      </div>
+      <div className="buttons">
+        <button className="btn" onClick={showHint}>
           Подсказка
         </button>
         <button
-          className="px-2 py-1 bg-gray-200"
+          className="btn"
           onClick={() => setShowLeaderboard(!showLeaderboard)}
         >
           Лидеры
         </button>
       </div>
-      <p className="mt-2">{status}</p>
       <p className="mt-2">Рейтинг: {rating}</p>
       {showLeaderboard && <Leaderboard />}
     </main>
