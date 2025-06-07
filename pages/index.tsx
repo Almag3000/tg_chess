@@ -24,25 +24,7 @@ export default function Home() {
   const [rating, setRating] = useState<number>(1000);
 
   const loadPuzzle = async () => {
-    try {
-      const res = await fetch("https://lichess.org/api/puzzle/daily");
-      const data = await res.json();
-      const g = new Chess();
-      const moves = data.game.pgn.trim().split(/\s+/);
-      for (let i = 0; i < data.puzzle.initialPly - 1; i++) {
-        g.move(moves[i], { sloppy: true } as any);
-      }
-      setFen(g.fen());
-      setSolution(data.puzzle.solution);
-      setStatus("");
-      setMoveIndex(0);
-      setSelectedSquare(null);
-      setLegalSquares([]);
-      setSquareStyles({});
-      setGame(g);
-      setOrientation(g.turn() === "w" ? "white" : "black");
-    } catch (e) {
-      console.error("Failed to load puzzle from API", e);
+    const useLocal = () => {
       const puzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
       setFen(puzzle.fen);
       setSolution(puzzle.solution);
@@ -54,6 +36,38 @@ export default function Home() {
       const g = new Chess(puzzle.fen);
       setGame(g);
       setOrientation(puzzle.fen.split(" ")[1] === "w" ? "white" : "black");
+    };
+
+    try {
+      const res = await fetch("https://lichess.org/api/puzzle/daily");
+      const data = await res.json();
+      const g = new Chess();
+      const moves = data.game.pgn.trim().split(/\s+/);
+      for (let i = 0; i < data.puzzle.initialPly - 1; i++) {
+        g.move(moves[i], { sloppy: true } as any);
+      }
+
+      const test = g.move({
+        from: data.puzzle.solution[0].slice(0, 2),
+        to: data.puzzle.solution[0].slice(2, 4),
+      } as any);
+      if (!test) {
+        throw new Error("Invalid puzzle from API");
+      }
+      g.undo();
+
+      setFen(g.fen());
+      setSolution(data.puzzle.solution);
+      setStatus("");
+      setMoveIndex(0);
+      setSelectedSquare(null);
+      setLegalSquares([]);
+      setSquareStyles({});
+      setGame(g);
+      setOrientation(g.turn() === "w" ? "white" : "black");
+    } catch (e) {
+      console.error("Failed to load puzzle from API", e);
+      useLocal();
     }
   };
 
@@ -170,6 +184,9 @@ export default function Home() {
         onSquareClick={onSquareClick}
         squareStyles={squareStyles}
         orientation={orientation}
+        boardStyle={{ border: "2px solid #444" }}
+        lightSquareStyle={{ backgroundColor: "#f0d9b5" }}
+        darkSquareStyle={{ backgroundColor: "#b58863" }}
         draggable={false}
       />
       <div className="mt-2">
