@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 import puzzles from "@/data/puzzles.json";
 import { Leaderboard } from "@/components/Leaderboard";
 
 const Chessboard = dynamic(() => import("chessboardjsx"), { ssr: false });
 
 export default function Home() {
-  const params = useSearchParams();
-  const user = params.get("username") || "Anonymous";
+  const router = useRouter();
+  const user = (router.query.username as string) || "Anonymous";
 
   const [fen, setFen] = useState("");
   const [solution, setSolution] = useState<string[]>([]);
