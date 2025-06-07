@@ -19,6 +19,7 @@ export default function Home() {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [legalSquares, setLegalSquares] = useState<string[]>([]);
   const [squareStyles, setSquareStyles] = useState<Record<string, any>>({});
+  const [orientation, setOrientation] = useState<"white" | "black">("white");
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [rating, setRating] = useState<number>(() => {
     if (typeof window !== "undefined") {
@@ -28,14 +29,22 @@ export default function Home() {
     return 1000;
   });
 
-  useEffect(() => {
+  const loadPuzzle = () => {
     const puzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
     setFen(puzzle.fen);
     setSolution(puzzle.solution);
     setStatus("");
     setMoveIndex(0);
+    setSelectedSquare(null);
+    setLegalSquares([]);
+    setSquareStyles({});
     const g = new Chess(puzzle.fen);
     setGame(g);
+    setOrientation(puzzle.fen.split(" ")[1] === "w" ? "white" : "black");
+  };
+
+  useEffect(() => {
+    loadPuzzle();
   }, []);
 
   const applyMove = (from: string, to: string) => {
@@ -43,14 +52,29 @@ export default function Home() {
     const move = from + to;
     if (move === solution[moveIndex]) {
       (game as any).move({ from, to });
-      setFen(game.fen());
-      if (moveIndex + 1 === solution.length) {
+      let next = moveIndex + 1;
+      if (next === solution.length) {
         setStatus("✅ Правильно!");
         const newRating = rating + 10;
         setRating(newRating);
         localStorage.setItem("rating_" + user, newRating.toString());
+        setTimeout(loadPuzzle, 1000);
+        return;
+      }
+
+      const auto = solution[next];
+      (game as any).move({ from: auto.slice(0, 2), to: auto.slice(2, 4) });
+      next += 1;
+      setFen(game.fen());
+
+      if (next === solution.length) {
+        setStatus("✅ Правильно!");
+        const newRating = rating + 10;
+        setRating(newRating);
+        localStorage.setItem("rating_" + user, newRating.toString());
+        setTimeout(loadPuzzle, 1000);
       } else {
-        setMoveIndex(moveIndex + 1);
+        setMoveIndex(next);
       }
     } else {
       setStatus("❌ Ошибка");
@@ -101,6 +125,7 @@ export default function Home() {
         width={350}
         onSquareClick={onSquareClick}
         squareStyles={squareStyles}
+        orientation={orientation}
         draggable={false}
       />
       <div className="mt-2">
