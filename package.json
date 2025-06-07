@@ -11,7 +11,9 @@
     "chessboardjsx": "^2.4.7",
     "next": "13.4.19",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "stockfish": "^16.0.0",
+    "stockfish.wasm": "^0.10.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
