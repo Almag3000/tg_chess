@@ -22,6 +22,16 @@ export default function Home() {
   const [orientation, setOrientation] = useState<"white" | "black">("white");
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [rating, setRating] = useState<number>(1000);
+  const saveRating = (val: number) => {
+    setRating(val);
+    if (typeof window !== 'undefined') {
+      fetch('/api/rating', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, rating: val }),
+      }).catch(() => {});
+    }
+  };
 
   const loadPuzzle = async () => {
     const useLocal = () => {
@@ -39,25 +49,24 @@ export default function Home() {
     };
 
     try {
-      const res = await fetch("https://lichess.org/api/puzzle/daily");
+      const res = await fetch("https://api.chess.com/pub/puzzle");
       const data = await res.json();
-      const g = new Chess();
-      const moves = data.game.pgn.trim().split(/\s+/);
-      for (let i = 0; i < data.puzzle.initialPly - 1; i++) {
-        g.move(moves[i], { sloppy: true } as any);
+
+      const g = new Chess(data.fen);
+
+      const movesLine = data.pgn.split(/\n\n/)[1] || "";
+      const tokens = movesLine.trim().split(/\s+/);
+      const pgnMoves = tokens.filter((t: string) => !/^\d+\./.test(t) && !/(1-0|0-1|1\/2-1\/2)/.test(t));
+      const solutionMoves: string[] = [];
+      for (const m of pgnMoves) {
+        const move = g.move(m.replace(/[+#]/g, ""), { sloppy: true } as any);
+        if (!move) throw new Error("bad move from API");
+        solutionMoves.push(move.from + move.to);
       }
 
-      const test = g.move({
-        from: data.puzzle.solution[0].slice(0, 2),
-        to: data.puzzle.solution[0].slice(2, 4),
-      } as any);
-      if (!test) {
-        throw new Error("Invalid puzzle from API");
-      }
       g.undo();
-
       setFen(g.fen());
-      setSolution(data.puzzle.solution);
+      setSolution(solutionMoves);
       setStatus("");
       setMoveIndex(0);
       setSelectedSquare(null);
@@ -84,8 +93,15 @@ export default function Home() {
         name = window.prompt("Введите ваше имя") || "Anonymous";
         localStorage.setItem("username", name);
       }
-      const saved = localStorage.getItem("rating_" + name);
-      setRating(saved ? parseInt(saved) : 1000);
+      (async () => {
+        try {
+          const res = await fetch("/api/rating?user=" + encodeURIComponent(name));
+          const data = await res.json();
+          setRating(data.rating ?? 1000);
+        } catch {
+          setRating(1000);
+        }
+      })();
     }
     setUser(name || "Anonymous");
   }, [router.isReady, router.query.username]);
@@ -121,8 +137,7 @@ export default function Home() {
       if (next === solution.length) {
         setStatus("✅ Правильно!");
         const newRating = rating + 10;
-        setRating(newRating);
-        localStorage.setItem("rating_" + user, newRating.toString());
+        saveRating(newRating);
         setTimeout(loadPuzzle, 1000);
       } else {
         setMoveIndex(next);
@@ -130,8 +145,7 @@ export default function Home() {
     } else {
       setStatus("❌ Ошибка");
       const newRating = Math.max(0, rating - 10);
-      setRating(newRating);
-      localStorage.setItem("rating_" + user, newRating.toString());
+      saveRating(newRating);
     }
   };
 
@@ -165,8 +179,7 @@ export default function Home() {
     const move = solution[moveIndex];
     setStatus(`Правильный ход: ${move}`);
     const newRating = Math.max(0, rating - 10);
-    setRating(newRating);
-    localStorage.setItem("rating_" + user, newRating.toString());
+    saveRating(newRating);
     const from = move.slice(0, 2);
     const to = move.slice(2, 4);
     const highlight: Record<string, any> = {};
