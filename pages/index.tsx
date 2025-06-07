@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
-import puzzles from "@/data/puzzles.json";
 import { Leaderboard } from "@/components/Leaderboard";
 import { Chess } from "chess.js";
 
@@ -34,20 +33,6 @@ export default function Home() {
   };
 
   const loadPuzzle = async () => {
-    const useLocal = () => {
-      const puzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
-      setFen(puzzle.fen);
-      setSolution(puzzle.solution);
-      setStatus("");
-      setMoveIndex(0);
-      setSelectedSquare(null);
-      setLegalSquares([]);
-      setSquareStyles({});
-      const g = new Chess(puzzle.fen);
-      setGame(g);
-      setOrientation(puzzle.fen.split(" ")[1] === "w" ? "white" : "black");
-    };
-
     try {
       const res = await fetch('/api/puzzle');
       if (!res.ok) throw new Error('api failed');
@@ -64,7 +49,6 @@ export default function Home() {
       setOrientation(g.turn() === 'w' ? 'white' : 'black');
     } catch (e) {
       console.error('Failed to load puzzle from API', e);
-      useLocal();
     }
   };
 
