@@ -9,11 +9,10 @@
   "dependencies": {
     "chess.js": "^1.0.0-beta.2",
     "chessboardjsx": "^2.4.7",
+    "js-chess-engine": "^1.0.2",
     "next": "13.4.19",
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "stockfish": "^16.0.0",
-    "stockfish.wasm": "^0.10.0"
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
