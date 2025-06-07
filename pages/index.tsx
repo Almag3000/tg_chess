@@ -88,19 +88,21 @@ export default function Home() {
     if (move === solution[moveIndex]) {
       (game as any).move({ from, to });
       let next = moveIndex + 1;
-      if (next === solution.length) {
-        setStatus("✅ Правильно!");
-        const newRating = rating + 10;
-        setRating(newRating);
-        localStorage.setItem("rating_" + user, newRating.toString());
-        setTimeout(loadPuzzle, 1000);
-        return;
+      let lastFrom = from;
+      let lastTo = to;
+      if (next < solution.length) {
+        const auto = solution[next];
+        (game as any).move({ from: auto.slice(0, 2), to: auto.slice(2, 4) });
+        lastFrom = auto.slice(0, 2);
+        lastTo = auto.slice(2, 4);
+        next += 1;
       }
-
-      const auto = solution[next];
-      (game as any).move({ from: auto.slice(0, 2), to: auto.slice(2, 4) });
-      next += 1;
       setFen(game.fen());
+
+      const highlight: Record<string, any> = {};
+      highlight[lastFrom] = { backgroundColor: "rgba(173,216,230,0.6)" };
+      highlight[lastTo] = { backgroundColor: "rgba(173,216,230,0.6)" };
+      setSquareStyles(highlight);
 
       if (next === solution.length) {
         setStatus("✅ Правильно!");
@@ -146,10 +148,17 @@ export default function Home() {
   };
 
   const showHint = () => {
-    setStatus(`Правильный ход: ${solution[moveIndex]}`);
+    const move = solution[moveIndex];
+    setStatus(`Правильный ход: ${move}`);
     const newRating = Math.max(0, rating - 10);
     setRating(newRating);
     localStorage.setItem("rating_" + user, newRating.toString());
+    const from = move.slice(0, 2);
+    const to = move.slice(2, 4);
+    const highlight: Record<string, any> = {};
+    highlight[from] = { backgroundColor: "rgba(30,144,255,0.6)" };
+    highlight[to] = { backgroundColor: "rgba(30,144,255,0.6)" };
+    setSquareStyles(highlight);
   };
 
   return (
