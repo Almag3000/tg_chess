@@ -7,7 +7,8 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    const engine = spawn('node', ['node_modules/stockfish/src/stockfish-nnue-16.js']);
+    const enginePath = require.resolve('stockfish/src/stockfish-nnue-16.js');
+    const engine = spawn('node', [enginePath]);
     const send = (cmd: string) => engine.stdin.write(cmd + '\n');
     const waitFor = (pattern: RegExp): Promise<string> =>
       new Promise((resolve) => {
