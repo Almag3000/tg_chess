@@ -23,9 +23,31 @@ export default function Home() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [rating, setRating] = useState<number>(1000);
 
+  const updateLeaderboard = async (value: number) => {
+    try {
+      await fetch("/api/leaderboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user, rating: value }),
+      });
+    } catch (e) {
+      console.error("Failed to update leaderboard", e);
+    }
+  };
+
   const loadPuzzle = async () => {
     const useLocal = () => {
-      const puzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
+      let history: string[] = [];
+      if (typeof window !== "undefined") {
+        history = JSON.parse(localStorage.getItem("puzzle_history") || "[]");
+      }
+      if (history.length >= puzzles.length) history = [];
+      const pool = puzzles.filter((p) => !history.includes(p.fen));
+      const puzzle = pool[Math.floor(Math.random() * pool.length)];
+      if (typeof window !== "undefined") {
+        history.push(puzzle.fen);
+        localStorage.setItem("puzzle_history", JSON.stringify(history));
+      }
       setFen(puzzle.fen);
       setSolution(puzzle.solution);
       setStatus("");
@@ -96,6 +118,12 @@ export default function Home() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (user) {
+      updateLeaderboard(rating);
+    }
+  }, [rating, user]);
+
   const applyMove = (from: string, to: string) => {
     if (!game) return;
     const move = from + to;
@@ -123,6 +151,7 @@ export default function Home() {
         const newRating = rating + 10;
         setRating(newRating);
         localStorage.setItem("rating_" + user, newRating.toString());
+        updateLeaderboard(newRating);
         setTimeout(loadPuzzle, 1000);
       } else {
         setMoveIndex(next);
@@ -132,6 +161,7 @@ export default function Home() {
       const newRating = Math.max(0, rating - 10);
       setRating(newRating);
       localStorage.setItem("rating_" + user, newRating.toString());
+      updateLeaderboard(newRating);
     }
   };
 
@@ -167,6 +197,7 @@ export default function Home() {
     const newRating = Math.max(0, rating - 10);
     setRating(newRating);
     localStorage.setItem("rating_" + user, newRating.toString());
+    updateLeaderboard(newRating);
     const from = move.slice(0, 2);
     const to = move.slice(2, 4);
     const highlight: Record<string, any> = {};
