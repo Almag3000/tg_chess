@@ -7,6 +7,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "chess.js": "^1.0.0-beta.2",
     "chessboardjsx": "^2.4.7",
     "next": "13.4.19",
     "react": "18.2.0",
