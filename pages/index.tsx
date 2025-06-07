@@ -23,27 +23,31 @@ export default function Home() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [rating, setRating] = useState<number>(1000);
 
-  const loadPuzzle = async () => {
+  const updateLeaderboard = async (value: number) => {
     try {
-      const res = await fetch("https://lichess.org/api/puzzle/daily");
-      const data = await res.json();
-      const g = new Chess();
-      const moves = data.game.pgn.trim().split(/\s+/);
-      for (let i = 0; i < data.puzzle.initialPly - 1; i++) {
-        g.move(moves[i], { sloppy: true } as any);
-      }
-      setFen(g.fen());
-      setSolution(data.puzzle.solution);
-      setStatus("");
-      setMoveIndex(0);
-      setSelectedSquare(null);
-      setLegalSquares([]);
-      setSquareStyles({});
-      setGame(g);
-      setOrientation(g.turn() === "w" ? "white" : "black");
+      await fetch("/api/leaderboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user, rating: value }),
+      });
     } catch (e) {
-      console.error("Failed to load puzzle from API", e);
-      const puzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
+      console.error("Failed to update leaderboard", e);
+    }
+  };
+
+  const loadPuzzle = async () => {
+    const useLocal = () => {
+      let history: string[] = [];
+      if (typeof window !== "undefined") {
+        history = JSON.parse(localStorage.getItem("puzzle_history") || "[]");
+      }
+      if (history.length >= puzzles.length) history = [];
+      const pool = puzzles.filter((p) => !history.includes(p.fen));
+      const puzzle = pool[Math.floor(Math.random() * pool.length)];
+      if (typeof window !== "undefined") {
+        history.push(puzzle.fen);
+        localStorage.setItem("puzzle_history", JSON.stringify(history));
+      }
       setFen(puzzle.fen);
       setSolution(puzzle.solution);
       setStatus("");
@@ -54,6 +58,62 @@ export default function Home() {
       const g = new Chess(puzzle.fen);
       setGame(g);
       setOrientation(puzzle.fen.split(" ")[1] === "w" ? "white" : "black");
+    };
+
+    const parsePgn = (pgn: string) => {
+      const body = pgn
+        .split("\n")
+        .filter((l) => !l.startsWith("[") && l.trim())
+        .join(" ");
+      return body
+        .replace(/\d+\.\.\.?/g, "")
+        .replace(/\d+\./g, "")
+        .trim()
+        .split(/\s+/)
+        .filter((m) => m && m !== "*");
+    };
+
+    try {
+      let history: string[] = [];
+      if (typeof window !== "undefined") {
+        history = JSON.parse(localStorage.getItem("puzzle_history") || "[]");
+      }
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const res = await fetch("https://api.chess.com/pub/puzzle/random");
+        const data = await res.json();
+        if (history.includes(data.fen)) continue;
+        const g = new Chess(data.fen);
+        const sanMoves = parsePgn(data.pgn);
+        const seq: string[] = [];
+        for (const san of sanMoves) {
+          const mv = (g as any).move(san, { sloppy: true });
+          if (!mv) throw new Error("Invalid puzzle from API");
+          seq.push(mv.from + mv.to + (mv.promotion || ""));
+        }
+
+        if (typeof window !== "undefined") {
+          history.push(data.fen);
+          localStorage.setItem(
+            "puzzle_history",
+            JSON.stringify(history.slice(-50))
+          );
+        }
+
+        setFen(g.fen());
+        setSolution(seq);
+        setStatus("");
+        setMoveIndex(0);
+        setSelectedSquare(null);
+        setLegalSquares([]);
+        setSquareStyles({});
+        setGame(g);
+        setOrientation(g.turn() === "w" ? "white" : "black");
+        return;
+      }
+      throw new Error("Could not fetch unique puzzle");
+    } catch (e) {
+      console.error("Failed to load puzzle from API", e);
+      useLocal();
     }
   };
 
@@ -82,6 +142,12 @@ export default function Home() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (user) {
+      updateLeaderboard(rating);
+    }
+  }, [rating, user]);
+
   const applyMove = (from: string, to: string) => {
     if (!game) return;
     const move = from + to;
@@ -109,6 +175,7 @@ export default function Home() {
         const newRating = rating + 10;
         setRating(newRating);
         localStorage.setItem("rating_" + user, newRating.toString());
+        updateLeaderboard(newRating);
         setTimeout(loadPuzzle, 1000);
       } else {
         setMoveIndex(next);
@@ -118,6 +185,7 @@ export default function Home() {
       const newRating = Math.max(0, rating - 10);
       setRating(newRating);
       localStorage.setItem("rating_" + user, newRating.toString());
+      updateLeaderboard(newRating);
     }
   };
 
@@ -153,6 +221,7 @@ export default function Home() {
     const newRating = Math.max(0, rating - 10);
     setRating(newRating);
     localStorage.setItem("rating_" + user, newRating.toString());
+    updateLeaderboard(newRating);
     const from = move.slice(0, 2);
     const to = move.slice(2, 4);
     const highlight: Record<string, any> = {};
@@ -170,6 +239,9 @@ export default function Home() {
         onSquareClick={onSquareClick}
         squareStyles={squareStyles}
         orientation={orientation}
+        boardStyle={{ border: "2px solid #444" }}
+        lightSquareStyle={{ backgroundColor: "#f0d9b5" }}
+        darkSquareStyle={{ backgroundColor: "#b58863" }}
         draggable={false}
       />
       <div className="mt-2">
