@@ -1,12 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 export function Leaderboard() {
-  const users = typeof window !== "undefined"
-    ? Object.entries(localStorage)
-      .filter(([key]) => key.startsWith("rating_"))
-      .map(([key, value]) => ({ name: key.replace("rating_", ""), rating: parseInt(value) }))
-      .sort((a, b) => b.rating - a.rating)
-    : [];
+  const [users, setUsers] = useState<{ name: string; rating: number }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/rating")
+      .then((res) => res.json())
+      .then((data) => {
+        setUsers(data.leaderboard || []);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="mt-4 leaderboard">
