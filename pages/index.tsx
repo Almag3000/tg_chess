@@ -15,8 +15,11 @@ export default function Home() {
   const [moveIndex, setMoveIndex] = useState(0);
   const [status, setStatus] = useState("");
   const [rating, setRating] = useState<number>(() => {
-    const saved = localStorage.getItem("rating_" + user);
-    return saved ? parseInt(saved) : 1000;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("rating_" + user);
+      return saved ? parseInt(saved) : 1000;
+    }
+    return 1000;
   });
 
   useEffect(() => {
