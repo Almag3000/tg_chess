@@ -9,7 +9,7 @@ const Chessboard = dynamic(() => import("chessboardjsx"), { ssr: false });
 
 export default function Home() {
   const router = useRouter();
-  const user = (router.query.username as string) || "Anonymous";
+  const [user, setUser] = useState("Anonymous");
 
   const [fen, setFen] = useState("");
   const [solution, setSolution] = useState<string[]>([]);
@@ -21,31 +21,66 @@ export default function Home() {
   const [squareStyles, setSquareStyles] = useState<Record<string, any>>({});
   const [orientation, setOrientation] = useState<"white" | "black">("white");
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [rating, setRating] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("rating_" + user);
-      return saved ? parseInt(saved) : 1000;
-    }
-    return 1000;
-  });
+  const [rating, setRating] = useState<number>(1000);
 
-  const loadPuzzle = () => {
-    const puzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
-    setFen(puzzle.fen);
-    setSolution(puzzle.solution);
-    setStatus("");
-    setMoveIndex(0);
-    setSelectedSquare(null);
-    setLegalSquares([]);
-    setSquareStyles({});
-    const g = new Chess(puzzle.fen);
-    setGame(g);
-    setOrientation(puzzle.fen.split(" ")[1] === "w" ? "white" : "black");
+  const loadPuzzle = async () => {
+    try {
+      const res = await fetch("https://lichess.org/api/puzzle/daily");
+      const data = await res.json();
+      const g = new Chess();
+      const moves = data.game.pgn.trim().split(/\s+/);
+      for (let i = 0; i < data.puzzle.initialPly - 1; i++) {
+        g.move(moves[i], { sloppy: true } as any);
+      }
+      setFen(g.fen());
+      setSolution(data.puzzle.solution);
+      setStatus("");
+      setMoveIndex(0);
+      setSelectedSquare(null);
+      setLegalSquares([]);
+      setSquareStyles({});
+      setGame(g);
+      setOrientation(g.turn() === "w" ? "white" : "black");
+    } catch (e) {
+      console.error("Failed to load puzzle from API", e);
+      const puzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
+      setFen(puzzle.fen);
+      setSolution(puzzle.solution);
+      setStatus("");
+      setMoveIndex(0);
+      setSelectedSquare(null);
+      setLegalSquares([]);
+      setSquareStyles({});
+      const g = new Chess(puzzle.fen);
+      setGame(g);
+      setOrientation(puzzle.fen.split(" ")[1] === "w" ? "white" : "black");
+    }
   };
 
   useEffect(() => {
-    loadPuzzle();
-  }, []);
+    if (!router.isReady) return;
+    let name = (router.query.username as string) || "";
+    if (typeof window !== "undefined") {
+      if (name) {
+        localStorage.setItem("username", name);
+      } else {
+        name = localStorage.getItem("username") || "";
+      }
+      if (!name) {
+        name = window.prompt("Введите ваше имя") || "Anonymous";
+        localStorage.setItem("username", name);
+      }
+      const saved = localStorage.getItem("rating_" + name);
+      setRating(saved ? parseInt(saved) : 1000);
+    }
+    setUser(name || "Anonymous");
+  }, [router.isReady, router.query.username]);
+
+  useEffect(() => {
+    if (user) {
+      loadPuzzle();
+    }
+  }, [user]);
 
   const applyMove = (from: string, to: string) => {
     if (!game) return;
