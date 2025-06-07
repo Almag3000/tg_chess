@@ -49,11 +49,9 @@ export default function Home() {
     };
 
     try {
-      // Fetch a random puzzle from Chess.com. The /pub/puzzle endpoint
-      // returns the daily puzzle which does not change during the day,
-      // causing repetition. The /pub/puzzle/random endpoint provides a
-      // new puzzle each request.
-      const res = await fetch("https://api.chess.com/pub/puzzle/random");
+      // Загружаем случайную задачу через локальный API-роут.
+      // Сервер выполняет запрос к Chess.com, обходя ограничения CORS.
+      const res = await fetch("/api/puzzle");
       const data = await res.json();
 
       const g = new Chess(data.fen);
