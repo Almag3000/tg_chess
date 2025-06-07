@@ -48,66 +48,23 @@ export default function Home() {
       setOrientation(puzzle.fen.split(" ")[1] === "w" ? "white" : "black");
     };
 
-    const useLichess = async (): Promise<boolean> => {
-      try {
-        const res = await fetch("https://lichess.org/api/puzzle/daily");
-        const data = await res.json();
-        const g = new Chess();
-        const moves = data.game.pgn.trim().split(/\s+/);
-        for (let i = 0; i < data.puzzle.initialPly - 1; i++) {
-          g.move(moves[i], { sloppy: true } as any);
-        }
-        setFen(g.fen());
-        setSolution(data.puzzle.solution);
-        setStatus("");
-        setMoveIndex(0);
-        setSelectedSquare(null);
-        setLegalSquares([]);
-        setSquareStyles({});
-        setGame(g);
-        setOrientation(g.turn() === "w" ? "white" : "black");
-        return true;
-      } catch (err) {
-        console.error("Failed to load puzzle from Lichess", err);
-        return false;
-      }
-    };
-
     try {
-      // Fetch a random puzzle from Chess.com. The /pub/puzzle endpoint
-      // returns the daily puzzle which does not change during the day,
-      // causing repetition. The /pub/puzzle/random endpoint provides a
-      // new puzzle each request.
-      const res = await fetch("https://api.chess.com/pub/puzzle/random");
+      const res = await fetch('/api/puzzle');
+      if (!res.ok) throw new Error('api failed');
       const data = await res.json();
-
-      const g = new Chess(data.fen);
-
-      const movesLine = data.pgn.split(/\n\n/)[1] || "";
-      const tokens = movesLine.trim().split(/\s+/);
-      const pgnMoves = tokens.filter((t: string) => !/^\d+\./.test(t) && !/(1-0|0-1|1\/2-1\/2)/.test(t));
-      const solutionMoves: string[] = [];
-      for (const m of pgnMoves) {
-        const move = g.move(m.replace(/[+#]/g, ""), { sloppy: true } as any);
-        if (!move) throw new Error("bad move from API");
-        solutionMoves.push(move.from + move.to);
-      }
-
-      g.undo();
-      setFen(g.fen());
-      setSolution(solutionMoves);
-      setStatus("");
+      setFen(data.fen);
+      setSolution(data.solution);
+      setStatus('');
       setMoveIndex(0);
       setSelectedSquare(null);
       setLegalSquares([]);
       setSquareStyles({});
+      const g = new Chess(data.fen);
       setGame(g);
-      setOrientation(g.turn() === "w" ? "white" : "black");
+      setOrientation(g.turn() === 'w' ? 'white' : 'black');
     } catch (e) {
-      console.error("Failed to load puzzle from API", e);
-      if (!(await useLichess())) {
-        useLocal();
-      }
+      console.error('Failed to load puzzle from API', e);
+      useLocal();
     }
   };
 

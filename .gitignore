@@ -5,6 +5,7 @@ dist/
 build/
 yarn.lock
 pnpm-lock.yaml
+tsconfig.tsbuildinfo
 
 # logs
 npm-debug.log*
