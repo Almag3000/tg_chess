@@ -81,6 +81,21 @@ export default function Home() {
     }
   };
 
+  const onMouseOverSquare = (square: string) => {
+    if (!game || selected) return;
+    square = square.toUpperCase();
+    const state = game.exportJson();
+    if (state.turn === (color === 'white' ? 'white' : 'black') && state.moves[square]) {
+      highlightSquares(square, state.moves[square]);
+    }
+  };
+
+  const onMouseOutSquare = () => {
+    if (!selected) {
+      highlightSquares(null, []);
+    }
+  };
+
   const afterPlayerMove = () => {
     if (!game) return;
     setFen(game.exportFEN());
@@ -108,21 +123,34 @@ export default function Home() {
         <h2 className="text-xl mb-2">Шахматы с компьютером</h2>
         <div className="mb-4">
           <label className="block mb-1">Цвет фигур</label>
-          <select value={color} onChange={(e) => setColor(e.target.value as any)} className="border p-1">
-            <option value="white">Белые</option>
-            <option value="black">Чёрные</option>
-          </select>
+          <div className="color-buttons">
+            <button
+              className={`color-btn ${color === 'white' ? 'selected' : ''}`}
+              onClick={() => setColor('white')}
+            >
+              Белые
+            </button>
+            <button
+              className={`color-btn ${color === 'black' ? 'selected' : ''}`}
+              onClick={() => setColor('black')}
+            >
+              Чёрные
+            </button>
+          </div>
         </div>
         <div className="mb-4">
           <label className="block mb-1">Уровень сложности: {level}</label>
-          <input
-            type="range"
-            min="1"
-            max="69"
-            value={level}
-            onChange={(e) => setLevel(parseInt(e.target.value))}
-            className="slider"
-          />
+          <div className="level-picker">
+            <button onClick={() => setLevel(Math.max(1, level - 1))}>-</button>
+            <input
+              type="number"
+              min="1"
+              max="69"
+              value={level}
+              onChange={(e) => setLevel(parseInt(e.target.value))}
+            />
+            <button onClick={() => setLevel(Math.min(69, level + 1))}>+</button>
+          </div>
         </div>
         <button className="btn" onClick={startGame}>Начать игру</button>
       </main>
@@ -137,6 +165,8 @@ export default function Home() {
           position={fen}
           width={boardWidth}
           onSquareClick={onSquareClick}
+          onMouseOverSquare={onMouseOverSquare}
+          onMouseOutSquare={onMouseOutSquare}
           squareStyles={squareStyles}
           orientation={color}
           boardStyle={{ border: '2px solid #444' }}
