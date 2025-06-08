@@ -1,11 +1,11 @@
 {
-  "name": "chess-puzzle-app",
+  "name": "chess-app",
   "version": "1.0.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx test/puzzle.test.ts"
+    "test": "tsx test/game.test.ts"
   },
   "dependencies": {
     "chess.js": "^1.0.0-beta.2",
