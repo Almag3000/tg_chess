@@ -19,6 +19,7 @@ export default function Home() {
   const [squareStyles, setSquareStyles] = useState<Record<string, any>>({});
   const [lastMove, setLastMove] = useState<string[]>([]);
   const [message, setMessage] = useState("");
+  const [paused, setPaused] = useState(false);
 
   const highlightSquares = (
     from: string | null,
@@ -28,13 +29,13 @@ export default function Home() {
     const styles: Record<string, any> = {};
     if (lm.length === 2) {
       const [f, t] = lm;
-      styles[f] = { backgroundColor: "rgba(255,215,0,0.5)" };
-      styles[t] = { backgroundColor: "rgba(255,215,0,0.5)" };
+      styles[f.toLowerCase()] = { backgroundColor: "rgba(255,215,0,0.5)" };
+      styles[t.toLowerCase()] = { backgroundColor: "rgba(255,215,0,0.5)" };
     }
     if (from) {
-      styles[from] = { boxShadow: "inset 0 0 0 3px rgba(50,150,255,0.8)" };
+      styles[from.toLowerCase()] = { boxShadow: "inset 0 0 0 3px rgba(50,150,255,0.8)" };
       moves.forEach((sq) => {
-        styles[sq] = {
+        styles[sq.toLowerCase()] = {
           background:
             "radial-gradient(circle, rgba(50,150,255,0.7) 20%, rgba(0,0,0,0) 22%)",
         };
@@ -47,6 +48,7 @@ export default function Home() {
     const g = new Game();
     setGame(g);
     setMenu(false);
+    setPaused(false);
     const f = g.exportFEN();
     setFen(f);
     if (color === "black") {
@@ -59,7 +61,7 @@ export default function Home() {
   };
 
   const onSquareClick = (square: string) => {
-    if (!game) return;
+    if (!game || paused) return;
     square = square.toUpperCase();
     if (selected) {
       if (legal.includes(square)) {
@@ -87,7 +89,7 @@ export default function Home() {
   };
 
   const onMouseOverSquare = (square: string) => {
-    if (!game || selected) return;
+    if (!game || selected || paused) return;
     square = square.toUpperCase();
     const state = game.exportJson();
     if (
@@ -99,7 +101,7 @@ export default function Home() {
   };
 
   const onMouseOutSquare = () => {
-    if (!selected) {
+    if (!selected && !paused) {
       highlightSquares(null, []);
     }
   };
@@ -123,11 +125,23 @@ export default function Home() {
     }
   };
 
+  const returnToMenu = () => {
+    setMenu(true);
+    setGame(null);
+    setMessage("");
+    setSelected(null);
+    setLegal([]);
+    setPaused(false);
+    setFen("");
+    setSquareStyles({});
+    setLastMove([]);
+  };
+
   const boardWidth = 320;
 
   if (menu) {
     return (
-      <main className="p-4">
+      <main className="p-4 menu-screen">
         <h2 className="text-xl mb-2">Шахматы с компьютером</h2>
         <div className="mb-4">
           <label className="block mb-1">Цвет фигур</label>
@@ -160,7 +174,7 @@ export default function Home() {
             <button onClick={() => setLevel(Math.min(69, level + 1))}>+</button>
           </div>
         </div>
-        <button className="btn" onClick={startGame}>
+        <button className="btn full-width" onClick={startGame}>
           Начать игру
         </button>
       </main>
@@ -170,6 +184,9 @@ export default function Home() {
   return (
     <main className="p-4">
       <h2 className="text-xl mb-2">Игра</h2>
+      <button className="btn full-width mb-2" onClick={() => setPaused(true)}>
+        Пауза
+      </button>
       <div
         style={{ position: "relative", width: boardWidth, margin: "0 auto" }}
       >
@@ -187,6 +204,16 @@ export default function Home() {
           draggable={false}
         />
         {message && <div className="status-overlay show">{message}</div>}
+        {paused && (
+          <div className="pause-overlay">
+            <button className="btn" onClick={() => setPaused(false)}>
+              Продолжить
+            </button>
+            <button className="btn" onClick={returnToMenu}>
+              В меню
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
