@@ -150,6 +150,28 @@ export default function Home() {
 
   const boardWidth = 320;
 
+  const restartGame = () => {
+    const g = new Game();
+    setGame(g);
+    setMessage("");
+    setSelected(null);
+    setLegal([]);
+    setPaused(false);
+    setSquareStyles({});
+    setLastMove([]);
+    setMoves([]);
+    const f = g.exportFEN();
+    setFen(f);
+    if (color === "black") {
+      const ai = g.aiMove(mapDifficulty(level)) as Record<string, string>;
+      const [from, to] = Object.entries(ai)[0];
+      setLastMove([from, to]);
+      setMoves((m) => [...m, `${from}-${to}`]);
+      setFen(g.exportFEN());
+      highlightSquares(null, [], [from, to]);
+    }
+  };
+
   if (menu) {
     return (
       <main className="p-4 menu-screen">
@@ -198,9 +220,7 @@ export default function Home() {
       <button className="btn pause full-width mb-2" onClick={() => setPaused(true)}>
         Пауза
       </button>
-      <div
-        style={{ position: "relative", width: boardWidth, margin: "0 auto" }}
-      >
+      <div className="board-container">
         <Chessboard
           position={fen}
           width={boardWidth}
@@ -209,9 +229,9 @@ export default function Home() {
           onMouseOutSquare={onMouseOutSquare}
           squareStyles={squareStyles}
           orientation={color}
-          boardStyle={{ border: "2px solid #444" }}
-          lightSquareStyle={{ backgroundColor: "#f0d9b5" }}
-          darkSquareStyle={{ backgroundColor: "#b58863" }}
+          boardStyle={{ border: "2px solid #222" }}
+          lightSquareStyle={{ backgroundColor: "#eeeed2" }}
+          darkSquareStyle={{ backgroundColor: "#769656" }}
           draggable={false}
         />
         {message && <div className="status-overlay show">{message}</div>}
@@ -220,8 +240,11 @@ export default function Home() {
             <button className="btn start" onClick={() => setPaused(false)}>
               Продолжить
             </button>
+            <button className="btn restart" onClick={restartGame}>
+              Новая игра
+            </button>
             <button className="btn" onClick={returnToMenu}>
-              В меню
+              Сдаться
             </button>
           </div>
         )}
