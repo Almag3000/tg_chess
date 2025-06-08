@@ -20,6 +20,7 @@ export default function Home() {
   const [lastMove, setLastMove] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [paused, setPaused] = useState(false);
+  const [moves, setMoves] = useState<string[]>([]);
 
   const highlightSquares = (
     from: string | null,
@@ -49,12 +50,14 @@ export default function Home() {
     setGame(g);
     setMenu(false);
     setPaused(false);
+    setMoves([]);
     const f = g.exportFEN();
     setFen(f);
     if (color === "black") {
       const ai = g.aiMove(mapDifficulty(level)) as Record<string, string>;
       const [from, to] = Object.entries(ai)[0];
       setLastMove([from, to]);
+      setMoves((m) => [...m, `${from}-${to}`]);
       setFen(g.exportFEN());
       highlightSquares(null, [], [from, to]);
     }
@@ -68,6 +71,7 @@ export default function Home() {
         try {
           game.move(selected, square);
           setLastMove([selected, square]);
+          setMoves((m) => [...m, `${selected}-${square}`]);
           highlightSquares(null, [], [selected, square]);
           afterPlayerMove();
         } catch {}
@@ -117,6 +121,7 @@ export default function Home() {
     const ai = game.aiMove(mapDifficulty(level)) as Record<string, string>;
     const [from, to] = Object.entries(ai)[0];
     setLastMove([from, to]);
+    setMoves((m) => [...m, `${from}-${to}`]);
     setFen(game.exportFEN());
     highlightSquares(null, [], [from, to]);
     const st = game.exportJson();
@@ -135,6 +140,7 @@ export default function Home() {
     setFen("");
     setSquareStyles({});
     setLastMove([]);
+    setMoves([]);
   };
 
   const boardWidth = 320;
@@ -214,6 +220,11 @@ export default function Home() {
             </button>
           </div>
         )}
+      </div>
+      <div className="move-log">
+        {moves.map((m, i) => (
+          <div key={i}>{i + 1}. {m}</div>
+        ))}
       </div>
     </main>
   );
