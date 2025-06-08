@@ -17,7 +17,30 @@ export default function Home() {
   const [selected, setSelected] = useState<string | null>(null);
   const [legal, setLegal] = useState<string[]>([]);
   const [squareStyles, setSquareStyles] = useState<Record<string, any>>({});
+  const [lastMove, setLastMove] = useState<string[]>([]);
   const [message, setMessage] = useState('');
+
+  const highlightSquares = (
+    from: string | null,
+    moves: string[] = []
+  ) => {
+    const styles: Record<string, any> = {};
+    if (lastMove.length === 2) {
+      const [f, t] = lastMove;
+      styles[f] = { backgroundColor: 'rgba(255,215,0,0.5)' };
+      styles[t] = { backgroundColor: 'rgba(255,215,0,0.5)' };
+    }
+    if (from) {
+      styles[from] = { boxShadow: 'inset 0 0 0 3px rgba(50,150,255,0.8)' };
+      moves.forEach((sq) => {
+        styles[sq] = {
+          background:
+            'radial-gradient(circle, rgba(50,150,255,0.7) 20%, rgba(0,0,0,0) 22%)',
+        };
+      });
+    }
+    setSquareStyles(styles);
+  };
 
   const startGame = () => {
     const g = new Game();
@@ -26,7 +49,9 @@ export default function Home() {
     const f = g.exportFEN();
     setFen(f);
     if (color === 'black') {
-      g.aiMove(mapDifficulty(level));
+      const ai = g.aiMove(mapDifficulty(level));
+      const [from, to] = Object.entries(ai)[0];
+      setLastMove([from, to]);
       setFen(g.exportFEN());
     }
   };
@@ -38,23 +63,20 @@ export default function Home() {
       if (legal.includes(square)) {
         try {
           game.move(selected, square);
+          setLastMove([selected, square]);
+          highlightSquares(null, []);
           afterPlayerMove();
         } catch {}
       }
       setSelected(null);
       setLegal([]);
-      setSquareStyles({});
+      highlightSquares(null, []);
     } else {
       const state = game.exportJson();
       if (state.turn === (color === 'white' ? 'white' : 'black') && state.moves[square]) {
         setSelected(square);
         setLegal(state.moves[square]);
-        const highlight: Record<string, any> = {};
-        highlight[square] = { backgroundColor: 'rgba(0,255,0,0.4)' };
-        state.moves[square].forEach((sq: string) => {
-          highlight[sq] = { backgroundColor: 'rgba(255,255,0,0.4)' };
-        });
-        setSquareStyles(highlight);
+        highlightSquares(square, state.moves[square]);
       }
     }
   };
@@ -67,8 +89,11 @@ export default function Home() {
       setMessage('Мат! Вы победили');
       return;
     }
-    game.aiMove(mapDifficulty(level));
+    const ai = game.aiMove(mapDifficulty(level));
+    const [from, to] = Object.entries(ai)[0];
+    setLastMove([from, to]);
     setFen(game.exportFEN());
+    highlightSquares(null, []);
     const st = game.exportJson();
     if (st.checkMate) {
       setMessage('Мат! Компьютер победил');
@@ -78,7 +103,6 @@ export default function Home() {
   const boardWidth = 320;
 
   if (menu) {
-    const levels = Array.from({ length: 69 }, (_, i) => i + 1);
     return (
       <main className="p-4">
         <h2 className="text-xl mb-2">Шахматы с компьютером</h2>
@@ -90,12 +114,15 @@ export default function Home() {
           </select>
         </div>
         <div className="mb-4">
-          <label className="block mb-1">Уровень сложности</label>
-          <select value={level} onChange={(e) => setLevel(parseInt(e.target.value))} className="border p-1">
-            {levels.map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
+          <label className="block mb-1">Уровень сложности: {level}</label>
+          <input
+            type="range"
+            min="1"
+            max="69"
+            value={level}
+            onChange={(e) => setLevel(parseInt(e.target.value))}
+            className="slider"
+          />
         </div>
         <button className="btn" onClick={startGame}>Начать игру</button>
       </main>

@@ -42,3 +42,8 @@ body {
 .status-overlay.show {
   opacity: 1;
 }
+
+.slider {
+  width: 100%;
+  accent-color: #6b46c1;
+}
