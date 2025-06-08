@@ -1,7 +1,7 @@
 body {
-  background-color: #f5f5fa;
-  color: #333;
-  font-family: Arial, sans-serif;
+  background-color: #262421;
+  color: #eee;
+  font-family: Helvetica, Arial, sans-serif;
 }
 
 .leaderboard {
@@ -18,10 +18,10 @@ body {
   padding: 10px;
   font-size: 16px;
   margin: 0 4px;
-  background-color: #666;
+  background-color: #4a4a4a;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
   display: inline-flex;
@@ -30,23 +30,31 @@ body {
 }
 
 .btn:hover {
-  background-color: #555;
+  background-color: #3c3c3c;
 }
 
 .btn.start {
-  background-color: #4caf50;
+  background-color: #388e3c;
 }
 
 .btn.start:hover {
-  background-color: #45a049;
+  background-color: #2e7d32;
 }
 
 .btn.pause {
-  background-color: #f44336;
+  background-color: #d32f2f;
 }
 
 .btn.pause:hover {
-  background-color: #d32f2f;
+  background-color: #b71c1c;
+}
+
+.btn.restart {
+  background-color: #1976d2;
+}
+
+.btn.restart:hover {
+  background-color: #115293;
 }
 
 .btn.full-width {
@@ -158,8 +166,18 @@ body {
   max-width: 320px;
   margin: 8px auto 0;
   padding: 4px;
-  background-color: #f5f5fa;
-  border: 1px solid #ccc;
+  background-color: #2b2b2b;
+  border: 1px solid #555;
   min-height: 40px;
   font-size: 14px;
+}
+
+.board-container {
+  position: relative;
+  width: 336px;
+  margin: 0 auto;
+  padding: 8px;
+  background-color: #312e2b;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
 }
