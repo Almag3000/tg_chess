@@ -49,7 +49,7 @@ export default function Home() {
     const f = g.exportFEN();
     setFen(f);
     if (color === 'black') {
-      const ai = g.aiMove(mapDifficulty(level));
+      const ai = g.aiMove(mapDifficulty(level)) as Record<string, string>;
       const [from, to] = Object.entries(ai)[0];
       setLastMove([from, to]);
       setFen(g.exportFEN());
@@ -89,7 +89,7 @@ export default function Home() {
       setMessage('Мат! Вы победили');
       return;
     }
-    const ai = game.aiMove(mapDifficulty(level));
+    const ai = game.aiMove(mapDifficulty(level)) as Record<string, string>;
     const [from, to] = Object.entries(ai)[0];
     setLastMove([from, to]);
     setFen(game.exportFEN());
