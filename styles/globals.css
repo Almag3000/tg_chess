@@ -47,3 +47,50 @@ body {
   width: 100%;
   accent-color: #6b46c1;
 }
+
+.color-buttons {
+  display: flex;
+}
+
+.color-btn {
+  flex: 1;
+  padding: 8px;
+  margin-right: 4px;
+  background-color: #e0e0e0;
+  border: 1px solid #888;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.color-btn.selected {
+  background-color: #6b46c1;
+  color: #fff;
+}
+
+.color-btn:last-child {
+  margin-right: 0;
+}
+
+.level-picker {
+  display: flex;
+  align-items: center;
+}
+
+.level-picker button {
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  background-color: #e0e0e0;
+  border: 1px solid #888;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.level-picker input {
+  width: 50px;
+  text-align: center;
+  margin: 0 4px;
+  padding: 4px;
+  border: 1px solid #888;
+  border-radius: 4px;
+}
