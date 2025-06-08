@@ -4,7 +4,7 @@ import { Game } from 'js-chess-engine';
 
 function randomFen(): string {
   const chess = new Chess();
-  const moves = 10 + Math.floor(Math.random() * 10);
+  const moves = 6 + Math.floor(Math.random() * 6); // shorter random game
   for (let i = 0; i < moves; i++) {
     const legal = chess.moves();
     if (!legal.length) break;
@@ -18,14 +18,14 @@ function aiLine(fen: string): string[] | null {
   const game = new Game(fen);
   const solution: string[] = [];
   for (let i = 0; i < 6; i++) {
-    const m = game.aiMove(4);
+    const m = game.aiMove(3); // reduced depth for speed
     const from = Object.keys(m)[0];
     const to = m[from];
     solution.push(from + to);
     const status = game.exportJson();
-    if (status.checkMate) break;
+    if (status.checkMate) return solution;
   }
-  return solution.length === 4 || solution.length === 6 ? solution : null;
+  return null;
 }
 
 export default function handler(
@@ -33,10 +33,10 @@ export default function handler(
   res: NextApiResponse
 ) {
   try {
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 20; i++) {
       const fen = randomFen();
       const solution = aiLine(fen);
-      if (solution) {
+      if (solution && solution.length >= 2) {
         res.status(200).json({ fen, solution });
         return;
       }
