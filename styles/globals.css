@@ -1,5 +1,5 @@
 body {
-  background-color: #f2f2f2;
+  background-color: #f5f5fa;
   color: #333;
   font-family: Arial, sans-serif;
 }
@@ -18,10 +18,20 @@ body {
   padding: 8px;
   font-size: 16px;
   margin: 0 4px;
-  background-color: #e0e0e0;
-  border: 1px solid #888;
+  background-color: #6b46c1;
+  color: #fff;
+  border: none;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.btn.full-width {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
 }
 
 .status-overlay {
@@ -93,4 +103,29 @@ body {
   padding: 4px;
   border: 1px solid #888;
   border-radius: 4px;
+}
+
+.menu-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.pause-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pause-overlay .btn {
+  width: 80%;
+  margin: 4px 0;
 }
