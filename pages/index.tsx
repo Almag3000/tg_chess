@@ -34,11 +34,13 @@ export default function Home() {
       styles[t.toLowerCase()] = { backgroundColor: "rgba(255,215,0,0.5)" };
     }
     if (from) {
-      styles[from.toLowerCase()] = { boxShadow: "inset 0 0 0 3px rgba(50,150,255,0.8)" };
+      styles[from.toLowerCase()] = {
+        boxShadow: "inset 0 0 0 3px rgba(0,0,0,0.5)",
+      };
       moves.forEach((sq) => {
         styles[sq.toLowerCase()] = {
           background:
-            "radial-gradient(circle, rgba(50,150,255,0.7) 20%, rgba(0,0,0,0) 22%)",
+            "radial-gradient(circle, rgba(0,0,0,0.3) 20%, rgba(0,0,0,0) 22%)",
         };
       });
     }
@@ -118,16 +120,19 @@ export default function Home() {
       setMessage("Мат! Вы победили");
       return;
     }
-    const ai = game.aiMove(mapDifficulty(level)) as Record<string, string>;
-    const [from, to] = Object.entries(ai)[0];
-    setLastMove([from, to]);
-    setMoves((m) => [...m, `${from}-${to}`]);
-    setFen(game.exportFEN());
-    highlightSquares(null, [], [from, to]);
-    const st = game.exportJson();
-    if (st.checkMate) {
-      setMessage("Мат! Компьютер победил");
-    }
+    setTimeout(() => {
+      if (!game) return;
+      const ai = game.aiMove(mapDifficulty(level)) as Record<string, string>;
+      const [from, to] = Object.entries(ai)[0];
+      setLastMove([from, to]);
+      setMoves((m) => [...m, `${from}-${to}`]);
+      setFen(game.exportFEN());
+      highlightSquares(null, [], [from, to]);
+      const st = game.exportJson();
+      if (st.checkMate) {
+        setMessage("Мат! Компьютер победил");
+      }
+    }, 100);
   };
 
   const returnToMenu = () => {
@@ -180,7 +185,7 @@ export default function Home() {
             <button onClick={() => setLevel(Math.min(69, level + 1))}>+</button>
           </div>
         </div>
-        <button className="btn full-width" onClick={startGame}>
+        <button className="btn start full-width" onClick={startGame}>
           Начать игру
         </button>
       </main>
@@ -190,7 +195,7 @@ export default function Home() {
   return (
     <main className="p-4">
       <h2 className="text-xl mb-2">Игра</h2>
-      <button className="btn full-width mb-2" onClick={() => setPaused(true)}>
+      <button className="btn pause full-width mb-2" onClick={() => setPaused(true)}>
         Пауза
       </button>
       <div
@@ -212,7 +217,7 @@ export default function Home() {
         {message && <div className="status-overlay show">{message}</div>}
         {paused && (
           <div className="pause-overlay">
-            <button className="btn" onClick={() => setPaused(false)}>
+            <button className="btn start" onClick={() => setPaused(false)}>
               Продолжить
             </button>
             <button className="btn" onClick={returnToMenu}>
