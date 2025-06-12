@@ -1,5 +1,7 @@
+import Stockfish from 'stockfish';
+
 class ChessEngine {
-  private engine: any;
+  private engine: Stockfish | null;
   private isReady: boolean;
 
   constructor() {
@@ -9,18 +11,19 @@ class ChessEngine {
 
   async init(): Promise<void> {
     if (typeof window !== 'undefined') {
-      const { default: Stockfish } = await import('stockfish');
       this.engine = new Stockfish();
       
       return new Promise((resolve) => {
-        this.engine.onmessage = (e: any) => {
-          if (e.data === 'uciok') {
-            this.isReady = true;
-            resolve();
-          }
-        };
-        this.engine.postMessage('uci');
-        this.engine.postMessage('isready');
+        if (this.engine) {
+          this.engine.onmessage = (e: { data: string }) => {
+            if (e.data === 'uciok') {
+              this.isReady = true;
+              resolve();
+            }
+          };
+          this.engine.postMessage('uci');
+          this.engine.postMessage('isready');
+        }
       });
     }
   }
@@ -40,18 +43,18 @@ class ChessEngine {
     }
 
     return new Promise((resolve) => {
-      let bestMove: string | null = null;
+      if (this.engine) {
+        this.engine.onmessage = (e: { data: string }) => {
+          const message = e.data;
+          if (message.startsWith('bestmove')) {
+            const bestMove = message.split(' ')[1];
+            resolve(bestMove);
+          }
+        };
 
-      this.engine.onmessage = (e: any) => {
-        const message = e.data;
-        if (message.startsWith('bestmove')) {
-          bestMove = message.split(' ')[1];
-          resolve(bestMove);
-        }
-      };
-
-      this.engine.postMessage(`position fen ${fen}`);
-      this.engine.postMessage(`go movetime ${timeLimit}`);
+        this.engine.postMessage(`position fen ${fen}`);
+        this.engine.postMessage(`go movetime ${timeLimit}`);
+      }
     });
   }
 
