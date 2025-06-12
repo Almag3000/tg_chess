@@ -65,6 +65,15 @@ export default function Home() {
     setStatus('Ваш ход');
   };
 
+  const onDrop = ({ sourceSquare, targetSquare }) => {
+    const move = {
+      from: sourceSquare,
+      to: targetSquare,
+      promotion: 'q',
+    };
+    makeMove(move);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary to-secondary text-white">
       <div className="container mx-auto px-4 py-8">
@@ -82,15 +91,15 @@ export default function Home() {
             <div className="bg-white rounded-lg shadow-xl p-4">
               <Chessboard
                 position={game.fen()}
-                onPieceDrop={({ sourceSquare, targetSquare }) => {
-                  const move = {
-                    from: sourceSquare,
-                    to: targetSquare,
-                    promotion: 'q',
-                  };
-                  makeMove(move);
-                }}
+                onPieceDrop={onDrop}
                 boardWidth={600}
+                arePiecesDraggable={!isThinking}
+                customBoardStyle={{
+                  borderRadius: '4px',
+                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
+                }}
+                customDarkSquareStyle={{ backgroundColor: '#4a5568' }}
+                customLightSquareStyle={{ backgroundColor: '#edf2f7' }}
               />
             </div>
           </div>
