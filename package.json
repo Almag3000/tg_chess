@@ -23,7 +23,8 @@
   "devDependencies": {
     "typescript": "^5.0.4",
     "@types/react": "^18.2.0",
-    "@types/node": "^18.15.11"
+    "@types/node": "^18.15.11",
+    "@types/chess.js": "^0.13.0"
   },
   "engines": {
     "node": ">=18.0.0"

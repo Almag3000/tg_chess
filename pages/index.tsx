@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Chessboard } from 'chessboardjsx';
+import Chessboard from 'chessboardjsx';
 import { Chess } from 'chess.js';
 import { motion } from 'framer-motion';
 import { RefreshIcon } from '@heroicons/react/outline';
@@ -72,6 +72,7 @@ export default function Home() {
       promotion: 'q',
     };
     makeMove(move);
+    return true;
   };
 
   return (
