@@ -1,259 +1,163 @@
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-import { Game } from "js-chess-engine";
-
-const Chessboard = dynamic(() => import("chessboardjsx"), { ssr: false });
-
-function mapDifficulty(level: number): number {
-  return Math.min(4, Math.floor((level - 1) / 14));
-}
+import { useState, useEffect, useRef } from 'react';
+import { Chessboard } from 'chessboardjsx';
+import { Chess } from 'chess.js';
+import { motion } from 'framer-motion';
+import { RefreshIcon } from '@heroicons/react/outline';
+import ChessEngine from '../components/ChessEngine';
 
 export default function Home() {
-  const [menu, setMenu] = useState(true);
-  const [color, setColor] = useState<"white" | "black">("white");
-  const [level, setLevel] = useState(1);
-  const [game, setGame] = useState<Game | null>(null);
-  const [fen, setFen] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
-  const [legal, setLegal] = useState<string[]>([]);
-  const [squareStyles, setSquareStyles] = useState<Record<string, any>>({});
-  const [lastMove, setLastMove] = useState<string[]>([]);
-  const [message, setMessage] = useState("");
-  const [paused, setPaused] = useState(false);
-  const [moves, setMoves] = useState<string[]>([]);
+  const [game, setGame] = useState(new Chess());
+  const [difficulty, setDifficulty] = useState(10);
+  const [isThinking, setIsThinking] = useState(false);
+  const [status, setStatus] = useState('Инициализация...');
+  const [isEngineReady, setIsEngineReady] = useState(false);
+  const engineRef = useRef<ChessEngine | null>(null);
 
-  const highlightSquares = (
-    from: string | null,
-    moves: string[] = [],
-    lm: string[] = lastMove,
-  ) => {
-    const styles: Record<string, any> = {};
-    if (lm.length === 2) {
-      const [f, t] = lm;
-      styles[f.toLowerCase()] = { backgroundColor: "rgba(255,215,0,0.5)" };
-      styles[t.toLowerCase()] = { backgroundColor: "rgba(255,215,0,0.5)" };
-    }
-    if (from) {
-      styles[from.toLowerCase()] = {
-        boxShadow: "inset 0 0 0 3px rgba(0,0,0,0.5)",
-      };
-      moves.forEach((sq) => {
-        styles[sq.toLowerCase()] = {
-          background:
-            "radial-gradient(circle, rgba(0,0,0,0.3) 20%, rgba(0,0,0,0) 22%)",
-        };
-      });
-    }
-    setSquareStyles(styles);
-  };
+  useEffect(() => {
+    const initEngine = async () => {
+      engineRef.current = new ChessEngine();
+      await engineRef.current.init();
+      engineRef.current.setDifficulty(difficulty);
+      setIsEngineReady(true);
+      setStatus('Ваш ход');
+    };
 
-  const startGame = () => {
-    const g = new Game();
-    setGame(g);
-    setMenu(false);
-    setPaused(false);
-    setMoves([]);
-    const f = g.exportFEN();
-    setFen(f);
-    if (color === "black") {
-      const ai = g.aiMove(mapDifficulty(level)) as Record<string, string>;
-      const [from, to] = Object.entries(ai)[0];
-      setLastMove([from, to]);
-      setMoves((m) => [...m, `${from}-${to}`]);
-      setFen(g.exportFEN());
-      highlightSquares(null, [], [from, to]);
-    }
-  };
+    initEngine();
 
-  const onSquareClick = (square: string) => {
-    if (!game || paused) return;
-    square = square.toUpperCase();
-    if (selected) {
-      if (legal.includes(square)) {
-        try {
-          game.move(selected, square);
-          setLastMove([selected, square]);
-          setMoves((m) => [...m, `${selected}-${square}`]);
-          highlightSquares(null, [], [selected, square]);
-          afterPlayerMove();
-        } catch {}
+    return () => {
+      if (engineRef.current) {
+        engineRef.current.quit();
       }
-      setSelected(null);
-      setLegal([]);
-      highlightSquares(null, []);
-    } else {
-      const state = game.exportJson();
-      if (
-        state.turn === (color === "white" ? "white" : "black") &&
-        state.moves[square]
-      ) {
-        setSelected(square);
-        setLegal(state.moves[square]);
-        highlightSquares(square, state.moves[square]);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (engineRef.current && isEngineReady) {
+      engineRef.current.setDifficulty(difficulty);
+    }
+  }, [difficulty]);
+
+  const makeMove = async (move: { from: string; to: string; promotion?: string }) => {
+    const gameCopy = new Chess(game.fen());
+    try {
+      gameCopy.move(move);
+      setGame(gameCopy);
+      setStatus('Ход компьютера...');
+      setIsThinking(true);
+
+      if (engineRef.current && isEngineReady) {
+        const bestMove = await engineRef.current.getBestMove(gameCopy.fen());
+        const newGame = new Chess(gameCopy.fen());
+        newGame.move(bestMove);
+        setGame(newGame);
+        setStatus('Ваш ход');
+        setIsThinking(false);
       }
+    } catch (error) {
+      console.error('Недопустимый ход:', error);
+      setStatus('Недопустимый ход');
+      setIsThinking(false);
     }
   };
 
-  const onMouseOverSquare = (square: string) => {
-    if (!game || selected || paused) return;
-    square = square.toUpperCase();
-    const state = game.exportJson();
-    if (
-      state.turn === (color === "white" ? "white" : "black") &&
-      state.moves[square]
-    ) {
-      highlightSquares(square, state.moves[square]);
-    }
+  const resetGame = () => {
+    setGame(new Chess());
+    setStatus('Ваш ход');
   };
 
-  const onMouseOutSquare = () => {
-    if (!selected && !paused) {
-      highlightSquares(null, []);
-    }
+  const onDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string }) => {
+    const move = {
+      from: sourceSquare,
+      to: targetSquare,
+      promotion: 'q',
+    };
+    makeMove(move);
   };
-
-  const afterPlayerMove = () => {
-    if (!game) return;
-    setFen(game.exportFEN());
-    const state = game.exportJson();
-    if (state.checkMate) {
-      setMessage("Мат! Вы победили");
-      return;
-    }
-    setTimeout(() => {
-      if (!game) return;
-      const ai = game.aiMove(mapDifficulty(level)) as Record<string, string>;
-      const [from, to] = Object.entries(ai)[0];
-      setLastMove([from, to]);
-      setMoves((m) => [...m, `${from}-${to}`]);
-      setFen(game.exportFEN());
-      highlightSquares(null, [], [from, to]);
-      const st = game.exportJson();
-      if (st.checkMate) {
-        setMessage("Мат! Компьютер победил");
-      }
-    }, 100);
-  };
-
-  const returnToMenu = () => {
-    setMenu(true);
-    setGame(null);
-    setMessage("");
-    setSelected(null);
-    setLegal([]);
-    setPaused(false);
-    setFen("");
-    setSquareStyles({});
-    setLastMove([]);
-    setMoves([]);
-  };
-
-  const boardWidth = 320;
-
-  const restartGame = () => {
-    const g = new Game();
-    setGame(g);
-    setMessage("");
-    setSelected(null);
-    setLegal([]);
-    setPaused(false);
-    setSquareStyles({});
-    setLastMove([]);
-    setMoves([]);
-    const f = g.exportFEN();
-    setFen(f);
-    if (color === "black") {
-      const ai = g.aiMove(mapDifficulty(level)) as Record<string, string>;
-      const [from, to] = Object.entries(ai)[0];
-      setLastMove([from, to]);
-      setMoves((m) => [...m, `${from}-${to}`]);
-      setFen(g.exportFEN());
-      highlightSquares(null, [], [from, to]);
-    }
-  };
-
-  if (menu) {
-    return (
-      <main className="p-4 menu-screen">
-        <h2 className="text-xl mb-2">Шахматы с компьютером</h2>
-        <div className="mb-4">
-          <label className="block mb-1">Цвет фигур</label>
-          <div className="color-buttons">
-            <button
-              className={`color-btn ${color === "white" ? "selected" : ""}`}
-              onClick={() => setColor("white")}
-            >
-              Белые
-            </button>
-            <button
-              className={`color-btn ${color === "black" ? "selected" : ""}`}
-              onClick={() => setColor("black")}
-            >
-              Чёрные
-            </button>
-          </div>
-        </div>
-        <div className="mb-4">
-          <label className="block mb-1">Уровень сложности: {level}</label>
-          <div className="level-picker">
-            <button onClick={() => setLevel(Math.max(1, level - 1))}>-</button>
-            <input
-              type="number"
-              min="1"
-              max="69"
-              value={level}
-              onChange={(e) => setLevel(parseInt(e.target.value))}
-            />
-            <button onClick={() => setLevel(Math.min(69, level + 1))}>+</button>
-          </div>
-        </div>
-        <button className="btn start full-width" onClick={startGame}>
-          Начать игру
-        </button>
-      </main>
-    );
-  }
 
   return (
-    <main className="p-4">
-      <h2 className="text-xl mb-2">Игра</h2>
-      <button className="btn pause full-width mb-2" onClick={() => setPaused(true)}>
-        Пауза
-      </button>
-      <div className="board-container">
-        <Chessboard
-          position={fen}
-          width={boardWidth}
-          onSquareClick={onSquareClick}
-          onMouseOverSquare={onMouseOverSquare}
-          onMouseOutSquare={onMouseOutSquare}
-          squareStyles={squareStyles}
-          orientation={color}
-          boardStyle={{ border: "2px solid #222" }}
-          lightSquareStyle={{ backgroundColor: "#eeeed2" }}
-          darkSquareStyle={{ backgroundColor: "#769656" }}
-          draggable={false}
-        />
-        {message && <div className="status-overlay show">{message}</div>}
-        {paused && (
-          <div className="pause-overlay">
-            <button className="btn start" onClick={() => setPaused(false)}>
-              Продолжить
-            </button>
-            <button className="btn restart" onClick={restartGame}>
-              Новая игра
-            </button>
-            <button className="btn" onClick={returnToMenu}>
-              Сдаться
-            </button>
+    <div className="min-h-screen bg-gradient-to-br from-primary to-secondary text-white">
+      <div className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-4xl font-bold mb-2">Шахматы</h1>
+          <p className="text-lg opacity-80">Играйте против компьютера</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
+            <div className="card">
+              <Chessboard
+                position={game.fen()}
+                onPieceDrop={onDrop}
+                boardWidth={600}
+                arePiecesDraggable={!isThinking}
+                customBoardStyle={{
+                  borderRadius: '4px',
+                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
+                }}
+                customDarkSquareStyle={{ backgroundColor: '#4a5568' }}
+                customLightSquareStyle={{ backgroundColor: '#edf2f7' }}
+              />
+            </div>
           </div>
-        )}
+
+          <div className="space-y-6">
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4">Настройки</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm mb-2">Сложность</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(parseInt(e.target.value))}
+                    className="w-full"
+                    disabled={!isEngineReady}
+                  />
+                  <div className="text-center mt-2">
+                    {difficulty === 1 && 'Начинающий'}
+                    {difficulty > 1 && difficulty < 10 && 'Любитель'}
+                    {difficulty >= 10 && difficulty < 15 && 'Продвинутый'}
+                    {difficulty >= 15 && 'Мастер'}
+                  </div>
+                </div>
+                <button
+                  onClick={resetGame}
+                  className="btn btn-primary w-full flex items-center justify-center space-x-2"
+                  disabled={!isEngineReady}
+                >
+                  <RefreshIcon className="w-5 h-5" />
+                  <span>Новая игра</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="card">
+              <h2 className="text-xl font-semibold mb-4">Статус игры</h2>
+              <div className="text-center text-lg">
+                {!isEngineReady ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="loading-spinner" />
+                    <span>Загрузка движка...</span>
+                  </div>
+                ) : isThinking ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="loading-spinner" />
+                    <span>Компьютер думает...</span>
+                  </div>
+                ) : (
+                  status
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="move-log">
-        {moves.map((m, i) => (
-          <div key={i}>{i + 1}. {m}</div>
-        ))}
-      </div>
-    </main>
+    </div>
   );
 }
