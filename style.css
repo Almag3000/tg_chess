@@ -1,0 +1,32 @@
+body {
+  font-family: sans-serif;
+  background: #222;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+#game {
+  text-align: center;
+}
+#board {
+  display: grid;
+  margin: auto;
+  gap: 2px;
+}
+.cell {
+  width: 40px;
+  height: 40px;
+  background: #444;
+  border-radius: 4px;
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+.cell.selected {
+  outline: 2px solid yellow;
+}
