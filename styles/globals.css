@@ -1,9 +1,0 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer components {
-  .loading-spinner {
-    @apply w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin;
-  }
-} 
