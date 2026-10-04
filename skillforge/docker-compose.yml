@@ -1,0 +1,27 @@
+# Вариант с HTTPS без собственного домена:
+#   1) узнайте IP сервера, например 203.0.113.7
+#   2) создайте файл .env рядом:  SITE=203-0-113-7.sslip.io
+#      (sslip.io — бесплатный DNS: имя вида 203-0-113-7.sslip.io всегда указывает на 203.0.113.7)
+#   3) docker compose up -d   — Caddy сам получит сертификат Let's Encrypt
+# Порты 80 и 443 на сервере должны быть открыты.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      TRUST_PROXY: "1"
+    volumes:
+      - progress:/data
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      SITE: ${SITE:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [app]
+volumes:
+  progress:
+  caddy_data:

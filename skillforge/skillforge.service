@@ -1,0 +1,15 @@
+# Установка без Docker:  sudo cp skillforge.service /etc/systemd/system/ && sudo systemctl enable --now skillforge
+[Unit]
+Description=Skillforge
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/skillforge
+Environment=PORT=8080 DATA_DIR=/var/lib/skillforge
+ExecStart=/usr/bin/node server/server.js
+Restart=always
+User=skillforge
+StateDirectory=skillforge
+
+[Install]
+WantedBy=multi-user.target

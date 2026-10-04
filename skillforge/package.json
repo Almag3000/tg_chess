@@ -1,0 +1,12 @@
+{
+  "name": "skillforge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Интерактивная платформа для изучения навыков. Первый навык — SQL.",
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node tests/validate.mjs"
+  },
+  "engines": { "node": ">=18" }
+}
