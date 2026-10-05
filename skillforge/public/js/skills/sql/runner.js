@@ -45,6 +45,19 @@ async function exec({ sql, after }) {
   return res;
 }
 
+let schemaCache = null;
+async function loadSchema() {
+  await init();
+  const t = await exec({ sql: "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid" });
+  const out = [];
+  for (const [name] of t.results[0].values) {
+    const cols = await exec({ sql: `PRAGMA table_info(${name})` });
+    const cnt = await exec({ sql: `SELECT COUNT(*) FROM ${name}` });
+    out.push({ name, rows: cnt.results[0].values[0][0], columns: cols.results[0].values.map((c) => ({ name: c[1], type: c[2], notnull: !!c[3], pk: !!c[5] })) });
+  }
+  return out;
+}
+
 export const runner = {
   language: 'sql',
   mode: 'text/x-sqlite',
@@ -55,20 +68,16 @@ export const runner = {
     return toOutput(await exec({ sql: code }));
   },
   grade: (code, ex) => gradeCode(exec, ex, code),
-  async schema() {
-    await init();
-    const t = await exec({ sql: "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid" });
-    const out = [];
-    for (const [name] of t.results[0].values) {
-      const cols = await exec({ sql: `PRAGMA table_info(${name})` });
-      const cnt = await exec({ sql: `SELECT COUNT(*) FROM ${name}` });
-      out.push({
-        name,
-        rows: cnt.results[0].values[0][0],
-        columns: cols.results[0].values.map((c) => ({ name: c[1], type: c[2], notnull: !!c[3], pk: !!c[5] })),
-      });
+  schema() { return (schemaCache ||= loadSchema()); },
+  /** Таблицы учебной базы, которые нужны для упражнения (по порядку появления в решении). */
+  async tablesFor(ex) {
+    const text = `${ex.starter || ''}\n${ex.solution || ''}\n${ex.check || ''}`.toLowerCase();
+    const found = [];
+    for (const t of await this.schema()) {
+      const m = text.match(new RegExp(`\\b${t.name}\\b`));
+      if (m) found.push({ t, at: m.index });
     }
-    return out;
+    return found.sort((a, b) => a.at - b.at).map((x) => x.t);
   },
   sampleQuery: (table) => `SELECT * FROM ${table} LIMIT 10;`,
 };

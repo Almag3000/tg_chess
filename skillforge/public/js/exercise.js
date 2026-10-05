@@ -40,7 +40,18 @@ export function mountExercise(container, ctx) {
   const prompt = h('div', { class: 'ex-prompt' }, mdBlock(ex.prompt));
   const feedback = h('div', { class: 'feedback', 'aria-live': 'polite' });
   const body = h('div', { class: 'ex-body' });
-  container.replaceChildren(h('article', { class: 'ex-card' }, head, prompt, body, feedback));
+  const tablesBox = h('div', { class: 'ex-tables', hidden: true });
+  container.replaceChildren(h('article', { class: 'ex-card' }, head, prompt, tablesBox, body, feedback));
+  if (ex.type !== 'quiz' && skill.runner?.tablesFor) {
+    skill.runner.tablesFor(ex).then((ts) => {
+      if (!ts.length) return;
+      tablesBox.hidden = false;
+      tablesBox.replaceChildren(h('div', { class: 'ex-tables-t' }, ts.length > 1 ? 'Данные берём из таблиц' : 'Данные берём из таблицы'),
+        ...ts.map((t) => h('div', { class: 'tb' },
+          h('span', { class: 'tb-n' }, t.name),
+          h('span', { class: 'tb-c' }, t.columns.map((c) => c.name).join(', ')))));
+    }).catch(() => {});
+  }
 
   const showFeedback = (kind, text, extra) => {
     feedback.className = `feedback ${kind}`;

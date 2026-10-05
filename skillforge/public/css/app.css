@@ -266,3 +266,9 @@ dialog.schema-dialog::backdrop { background: rgba(8,10,16,.55); } .dlg-head { di
 .toast { padding: 10px 18px; border-radius: 99px; background: var(--text); color: var(--bg); font-weight: 700; box-shadow: var(--shadow); animation: pop .25s; transition: opacity .4s; }
 .toast.xp { background: #f0b429; color: #3a2a00; } .toast.bad { background: var(--bad); color: #fff; } .toast.out { opacity: 0; }
 @media (max-width: 560px) { .ex-card { padding: 14px; } .toolbar .btn { padding: 8px 12px; } .md { font-size: .98rem; } }
+
+.ex-tables { margin: -4px 0 14px; padding: 10px 14px; border-radius: 12px; background: var(--primary-soft); display: grid; gap: 4px; font-size: .88rem; }
+.ex-tables-t { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--primary); }
+.tb { display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.tb-n { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; }
+.tb-c { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
