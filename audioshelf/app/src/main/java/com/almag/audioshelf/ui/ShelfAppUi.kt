@@ -32,7 +32,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -185,7 +184,10 @@ private fun Header(subtitle: String, onSearch: () -> Unit, onSettings: () -> Uni
 
 @Composable
 private fun HeaderButton(icon: ImageVector, label: String, onClick: () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.padding(start = 4.dp).size(38.dp).clip(CircleShape).background(Shelf.bg3)) {
+    Box(
+        Modifier.padding(start = 8.dp).size(38.dp).clip(CircleShape).background(Shelf.bg3).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
         Icon(icon, label, tint = Shelf.sub, modifier = Modifier.size(19.dp))
     }
 }

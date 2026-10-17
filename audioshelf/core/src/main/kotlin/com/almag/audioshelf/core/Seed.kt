@@ -188,6 +188,7 @@ object Seed {
         arrayOf("Староста", "Пивной барон", "Иван Магазинников", D),
     )
 
+    @Suppress("UNUSED_PARAMETER")
     fun library(now: Long, newId: () -> String): Library = Library(
         books = rows.map { (title, series, author, code) ->
             Book(
@@ -197,7 +198,8 @@ object Seed {
                 author = author,
                 status = statusOf(code),
                 progress = if (code == L) 100 else 0,
-                addedAt = now,
+                // The original list has no dates; 0 keeps "добавлена" hidden.
+                addedAt = 0,
             )
         },
         authors = authors,
