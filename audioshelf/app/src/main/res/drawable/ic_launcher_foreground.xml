@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- shelf -->
+    <path android:fillColor="#FBF8F2" android:pathData="M28,72h52v4h-52z" />
+    <!-- book 1 -->
+    <path android:fillColor="#FBF8F2" android:pathData="M33,40h9v32h-9z" />
+    <path android:fillColor="#C4532F" android:pathData="M33,46h9v2h-9zM33,64h9v2h-9z" />
+    <!-- book 2 (tall) -->
+    <path android:fillColor="#F1E6D3" android:pathData="M44,33h10v39h-10z" />
+    <path android:fillColor="#C4532F" android:pathData="M46.5,40h5v5h-5z" />
+    <!-- book 3 (leaning) -->
+    <path android:fillColor="#FBF8F2" android:pathData="M56,72L64.5,72L75.5,43.5L67.5,40.5Z" />
+    <!-- headphones over the tall book -->
+    <path android:fillColor="#00000000" android:strokeColor="#FBF8F2" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M39,40C39,24 59,24 59,40" />
+    <path android:fillColor="#FBF8F2" android:pathData="M36,38h6v9h-6zM56,38h6v9h-6z" />
+</vector>

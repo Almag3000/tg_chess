@@ -1,0 +1,143 @@
+name: Audioshelf Android
+
+on:
+  push:
+    paths:
+      - "audioshelf/**"
+      - ".github/workflows/audioshelf.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: audioshelf-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: audioshelf
+
+jobs:
+  build:
+    name: Build and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Core tests (pure Kotlin)
+        run: ./gradlew -p core test --stacktrace
+
+      - name: Android unit tests (Robolectric)
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Assemble APKs
+        run: ./gradlew :app:assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+
+      - name: Lint
+        run: ./gradlew :app:lintRelease --stacktrace
+        continue-on-error: true
+
+      - name: Collect outputs
+        if: always()
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/*.apk out/ 2>/dev/null || true
+          find app/build/outputs -name "*.png" -path "*screenshots*" -exec cp {} out/ \; 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-outputs
+          path: |
+            audioshelf/out
+            audioshelf/app/build/reports
+            audioshelf/app/build/outputs/apk
+            audioshelf/app/build/robolectric-screens
+          if-no-files-found: ignore
+
+  device-tests:
+    name: Emulator tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Enable KVM
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run instrumented tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          working-directory: audioshelf
+          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: device-test-outputs
+          path: |
+            audioshelf/app/build/reports/androidTests
+            audioshelf/app/build/outputs/connected_android_test_additional_output
+          if-no-files-found: ignore
+
+  release:
+    name: Publish APK
+    needs: [build, device-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+          path: build-outputs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: device-test-outputs
+          path: device-outputs
+        continue-on-error: true
+
+      - name: Create GitHub release
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="audioshelf-v1.0.${{ github.run_number }}"
+          mkdir -p dist
+          APK=$(find build-outputs -name "*release*.apk" | head -1)
+          cp "$APK" "dist/polka-1.0.${{ github.run_number }}.apk"
+          find build-outputs device-outputs -name "*.png" 2>/dev/null | while read f; do cp "$f" dist/; done || true
+          if ls dist/*.png >/dev/null 2>&1; then (cd dist && zip -q screenshots.zip *.png && rm -f *.png); fi
+          ls -la dist
+          gh release create "$TAG" dist/* \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "Полка 1.0.${{ github.run_number }}" \
+            --notes "Сборка Android-приложения «Полка» (учёт аудиокниг) из ветки ${{ github.ref_name }}." \
+            --prerelease
