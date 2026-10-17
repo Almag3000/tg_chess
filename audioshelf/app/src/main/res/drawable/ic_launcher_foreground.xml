@@ -2,19 +2,18 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <!-- shelf -->
-    <path android:fillColor="#FBF8F2" android:pathData="M28,72h52v4h-52z" />
-    <!-- book 1 -->
-    <path android:fillColor="#FBF8F2" android:pathData="M33,40h9v32h-9z" />
-    <path android:fillColor="#C4532F" android:pathData="M33,46h9v2h-9zM33,64h9v2h-9z" />
-    <!-- book 2 (tall) -->
-    <path android:fillColor="#F1E6D3" android:pathData="M44,33h10v39h-10z" />
-    <path android:fillColor="#C4532F" android:pathData="M46.5,40h5v5h-5z" />
-    <!-- book 3 (leaning) -->
-    <path android:fillColor="#FBF8F2" android:pathData="M56,72L64.5,72L75.5,43.5L67.5,40.5Z" />
-    <!-- headphones over the tall book -->
-    <path android:fillColor="#00000000" android:strokeColor="#FBF8F2" android:strokeWidth="3"
+    <!-- shelf board -->
+    <path android:fillColor="#E8A83E" android:pathData="M27,73h54v4.5h-54z" />
+    <!-- spines, colours from the shelf palette -->
+    <path android:fillColor="#7B5EA7" android:pathData="M31,42h8v31h-8z" />
+    <path android:fillColor="#5E8FA8" android:pathData="M40,35h9v38h-9z" />
+    <path android:fillColor="#6DBF8A" android:pathData="M50,39h7.5v34h-7.5z" />
+    <path android:fillColor="#A85E7B" android:pathData="M59,73L67,73L77,46L69.5,43.2Z" />
+    <!-- small bands on the spines -->
+    <path android:fillColor="#33000000" android:pathData="M31,47h8v1.6h-8zM40,40h9v1.6h-9zM50,44h7.5v1.6h-7.5z" />
+    <!-- headphones: it is an audiobook shelf -->
+    <path android:fillColor="#00000000" android:strokeColor="#E8A83E" android:strokeWidth="3"
         android:strokeLineCap="round"
-        android:pathData="M39,40C39,24 59,24 59,40" />
-    <path android:fillColor="#FBF8F2" android:pathData="M36,38h6v9h-6zM56,38h6v9h-6z" />
+        android:pathData="M37,37C37,21.5 61,21.5 61,37" />
+    <path android:fillColor="#E8A83E" android:pathData="M34,34.5h6.5v9.5h-6.5zM57.5,34.5h6.5v9.5h-6.5z" />
 </vector>

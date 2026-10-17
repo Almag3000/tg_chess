@@ -1,5 +1,4 @@
 <resources>
-    <color name="paper">#FBF8F2</color>
-    <color name="ink">#1F1B16</color>
-    <color name="terracotta">#C4532F</color>
+    <color name="bg">#141210</color>
+    <color name="amber">#E8A83E</color>
 </resources>
