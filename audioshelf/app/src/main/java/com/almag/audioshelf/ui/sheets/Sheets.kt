@@ -430,23 +430,15 @@ private fun NameDialog(
     note: String? = null,
 ) {
     var value by rememberSaveable { mutableStateOf(initial) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Shelf.bg2,
-        title = { Text(title, fontFamily = Playfair, color = Shelf.white) },
-        text = {
-            Column {
-                Field(label, value, { value = it }, placeholder, tag = "field:name")
-                if (note != null) Hint(note)
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(value) }, modifier = Modifier.testTag("confirm")) {
-                Text(confirm, color = Shelf.amber, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена", color = Shelf.sub) } },
-    )
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    ShelfSheet(onDismiss = onDismiss, tag = "sheet:name") {
+        SheetTitle(title)
+        Field(label, value, { value = it }, placeholder, tag = "field:name", focus = focus)
+        if (note != null) Hint(note)
+        MainButton(confirm, Modifier.testTag("confirm")) { onConfirm(value) }
+        GhostButton("Отмена", onDismiss)
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -454,28 +446,30 @@ private fun NameDialog(
 private fun AddSeriesDialog(lib: Library, presetAuthor: String, vm: ShelfViewModel) {
     var name by rememberSaveable { mutableStateOf("") }
     var author by rememberSaveable { mutableStateOf(presetAuthor) }
-    AlertDialog(
-        onDismissRequest = vm::close,
-        containerColor = Shelf.bg2,
-        title = { Text("Новая серия", fontFamily = Playfair, color = Shelf.white) },
-        text = {
-            Column {
-                Field("Название серии", name, { name = it }, "Название цикла или серии", tag = "field:name")
-                Field("Автор", author, { author = it }, "Имя автора", tag = "field:author")
-                val matches = lib.authors.filter { author.isNotBlank() && T.matches(author, it) && it != author }.take(4)
-                if (matches.isNotEmpty()) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        for (a in matches) Suggestion(a) { author = a }
-                    }
-                }
+    ShelfSheet(onDismiss = vm::close, tag = "sheet:series") {
+        SheetTitle("Новая серия")
+        Field("Название серии", name, { name = it }, "Название цикла или серии", tag = "field:name")
+        Field("Автор", author, { author = it }, "Имя автора", tag = "field:author")
+        val matches = lib.authors.filter { author.isNotBlank() && T.matches(author, it) && it != author }.take(4)
+        if (matches.isNotEmpty()) {
+            FlowRow(Modifier.padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (a in matches) Suggestion(a) { author = a }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { vm.addSeries(name, author) }, modifier = Modifier.testTag("confirm")) {
-                Text("Добавить", color = Shelf.amber, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = { TextButton(onClick = vm::close) { Text("Отмена", color = Shelf.sub) } },
+        }
+        MainButton("Добавить", Modifier.testTag("confirm")) { vm.addSeries(name, author) }
+        GhostButton("Отмена") { vm.close() }
+    }
+}
+
+@Composable
+private fun SheetTitle(text: String) {
+    Text(
+        text,
+        fontFamily = Playfair,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 22.sp,
+        color = Shelf.white,
+        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
     )
 }
 

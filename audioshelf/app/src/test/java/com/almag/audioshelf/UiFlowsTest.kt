@@ -1,18 +1,16 @@
 package com.almag.audioshelf
 
-import android.graphics.Bitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -41,7 +39,6 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.io.File
 import java.time.ZoneOffset
 
 @OptIn(ExperimentalTestApi::class)
@@ -64,17 +61,12 @@ class UiFlowsTest {
 
     private val lib get() = vm.library.value!!
 
-    /** Saves every window (the app, plus an open sheet or dialog) as PNG for the release notes. */
+    /** Saves the whole screen, including an open sheet or dialog, as PNG for the release notes. */
+    @OptIn(ExperimentalRoborazziApi::class)
     private fun shot(name: String) {
         compose.waitForIdle()
-        val dir = File("build/robolectric-screens").apply { mkdirs() }
-        val roots = compose.onAllNodes(isRoot())
-        val count = roots.fetchSemanticsNodes().size
-        for (i in 0 until count) {
-            val bmp = roots[i].captureToImage().asAndroidBitmap()
-            val suffix = if (count > 1) "-$i" else ""
-            File(dir, "$name$suffix.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        }
+        runCatching { captureScreenRoboImage("build/robolectric-screens/$name.png") }
+            .onFailure { System.err.println("SCREENSHOT FAILED $name: $it") }
     }
 
     private fun tag(t: String): SemanticsNodeInteraction = compose.onNodeWithTag(t, useUnmergedTree = true)
